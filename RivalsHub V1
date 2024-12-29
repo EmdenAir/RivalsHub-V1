@@ -1,0 +1,225 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+
+local Window = Rayfield:CreateWindow({
+   Name = "EmdenHub V1",
+   Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
+   LoadingTitle = "Rayfield Interface Suite",
+   LoadingSubtitle = "by Lounge",
+   Theme = "Default", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
+
+   ConfigurationSaving = {
+      Enabled = false,
+      FolderName = nil, -- Create a custom folder for your hub/game
+      FileName = "Big Hub"
+   },
+
+   Discord = {
+      Enabled = false, -- Prompt the user to join your Discord server if their executor supports it
+      Invite = "noinvitelink", -- The Discord invite code, do not include discord.gg/. E.g. discord.gg/ABCD would be ABCD
+      RememberJoins = true -- Set this to false to make them join the discord every time they load it up
+   },
+
+   KeySystem = false, -- Set this to true to use our key system
+   KeySettings = {
+      Title = "Untitled",
+      Subtitle = "Key System",
+      Note = "No method of obtaining the key is provided", -- Use this to tell the user how to get a key
+      FileName = "Key", -- It is recommended to use something unique as other scripts using Rayfield may overwrite your key file
+      SaveKey = true, -- The user's key will be saved, but if you change the key, they will be unable to use your script
+      GrabKeyFromSite = false, -- If this is true, set Key below to the RAW site you would like Rayfield to get the key from
+      Key = {"Hello"} -- List of keys that will be accepted by the system, can be RAW file links (pastebin, github etc) or simple strings ("hello","key22")
+   }
+})
+
+
+
+-- ESP Script
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+
+-- Funktion zum Erstellen von ESP für einen Spieler
+local function createESP(player)
+    if player.Character then
+        local character = player.Character
+        local head = character:WaitForChild("Head")
+        
+        -- Erstellen der Umrandung
+        local highlight = Instance.new("Highlight")
+        highlight.Parent = character
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0.2
+        highlight.OutlineColor = Color3.fromRGB(255, 0, 0)  -- Rote Umrandung für den Spieler
+
+
+        -- Erstellen eines Namens-Labels
+        local billboardGui = Instance.new("BillboardGui")
+        billboardGui.Adornee = head
+        billboardGui.Size = UDim2.new(0, 200, 0, 50)
+        billboardGui.StudsOffset = Vector3.new(0, 2, 0)
+        billboardGui.Parent = character
+        
+        local nameLabel = Instance.new("TextLabel")
+        nameLabel.Size = UDim2.new(1, 0, 1, 0)
+        nameLabel.Text = player.Name
+        nameLabel.TextColor3 = Color3.fromRGB(255, 0, 0)  -- Rote Schriftfarbe
+        nameLabel.BackgroundTransparency = 1
+        nameLabel.TextSize = 20
+        nameLabel.Parent = billboardGui
+    end
+end
+
+
+-- Funktion zum Entfernen von ESP für einen Spieler
+local function removeESP(player)
+    if player.Character then
+        local character = player.Character
+        local highlight = character:FindFirstChildOfClass("Highlight")
+        if highlight then
+            highlight:Destroy()
+        end
+
+
+        local billboardGui = character:FindFirstChildOfClass("BillboardGui")
+        if billboardGui then
+            billboardGui:Destroy()
+        end
+    end
+end
+
+
+-- ESP aktivieren, wenn der Spieler hinzukommt
+Players.PlayerAdded:Connect(function(player)
+    player.CharacterAdded:Connect(function()
+        createESP(player)
+    end)
+end)
+
+
+-- ESP entfernen, wenn der Spieler das Spiel verlässt
+Players.PlayerRemoving:Connect(function(player)
+    removeESP(player)
+end)
+
+
+-- Optional: ESP für alle bestehenden Spieler sofort aktivieren
+for _, player in pairs(Players:GetPlayers()) do
+    if player.Character then
+        createESP(player)
+    end
+    player.CharacterAdded:Connect(function()
+        createESP(player)
+    end)
+end
+
+
+
+
+
+-- Aimbot Script
+local aimbotEnabled = false
+local targetPart = "Head" -- Zielbereich (z.B. "Head", "Torso")
+
+
+-- Aimbot-Toggle hinzufügen
+local aimbotToggle = Window:CreateTab("Aimbot"):CreateToggle({
+   Name = "Aimbot ",
+   CurrentValue = false,
+   Flag = "ToggleAimbot",
+   Callback = function(Value)
+      aimbotEnabled = Value
+      if aimbotEnabled then
+         print("Aimbot aktiviert!")
+      else
+         print("Aimbot deaktiviert!")
+      end
+   end,
+})
+
+
+-- Aimbot-Funktion
+RunService.RenderStepped:Connect(function()
+    if aimbotEnabled then
+        local localPlayer = Players.LocalPlayer
+        local camera = workspace.CurrentCamera
+        local closestPlayer = nil
+        local shortestDistance = math.huge
+
+
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= localPlayer and player.Character and player.Character:FindFirstChild(targetPart) then
+                local targetPosition = player.Character[targetPart].Position
+                local screenPoint = camera:WorldToViewportPoint(targetPosition)
+                local distance = (Vector2.new(screenPoint.X, screenPoint.Y) - Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)).Magnitude
+
+
+                if distance < shortestDistance then
+                    shortestDistance = distance
+                    closestPlayer = player
+                end
+            end
+        end
+
+
+        -- Aimbot aktiviert: Kamera auf das Ziel ausrichten
+        if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild(targetPart) then
+            local targetPosition = closestPlayer.Character[targetPart].Position
+            camera.CFrame = CFrame.new(camera.CFrame.Position, targetPosition)
+        end
+    end
+end)
+
+
+
+-- Tab hinzufügen für ESP und Aimbot
+local Tab = Window:CreateTab("Player ")
+
+
+-- ESP Toggle hinzufügen
+local espToggle = Tab:CreateToggle({
+   Name = "ESP",
+   CurrentValue = false,
+   Flag = "ToggleESP",
+   Callback = function(Value)
+      if Value then
+         -- ESP für alle Spieler aktivieren
+         for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                createESP(player)
+            end
+            player.CharacterAdded:Connect(function()
+                createESP(player)
+            end)
+         end
+      else
+         -- ESP für alle Spieler entfernen
+         for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                removeESP(player)
+            end
+         end
+      end
+   end,
+})
+
+
+
+local Section = Tab:CreateSection("Misc")
+
+
+
+-- Erstelle ein Tab für Teleport
+local Tab = Window:CreateTab("Rejoin", 4483362458) -- Tab-Name und Icon-ID
+
+-- Button für Spielteleport
+local Button = Tab:CreateButton({
+   Name = "Rejoin",
+   Callback = function()
+      local placeId = 17625359962 -- Spiel-ID von Rivals
+      game:GetService("TeleportService"):Teleport(placeId)
+   end
+})
